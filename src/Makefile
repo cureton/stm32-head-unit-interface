@@ -2,7 +2,7 @@ PROJECT = usb_cdc
 BUILD_DIR = bin
 
 SHARED_DIR = 
-CFILES = main.c usb_descriptors.c ringbuf.c
+CFILES = main.c usb_descriptors.c ringbuf.c usb_cdc.c
 CFILES += 
 AFILES +=
 

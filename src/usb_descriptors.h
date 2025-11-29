@@ -20,8 +20,5 @@ extern const struct usb_device_descriptor dev_descriptor;
 extern const struct usb_config_descriptor config_descriptor;
 extern const char *usb_strings[];
 
-/* Called from main.c after usbd_init() */
-void usb_set_config(usbd_device *usbd_dev, uint16_t wValue);
-void usb_set_unique_serial(void);
-
+void usb_descriptors_set_unique_serial(); /* Set serial number to processor id */
 
