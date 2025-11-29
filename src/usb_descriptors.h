@@ -20,5 +20,5 @@ extern const struct usb_device_descriptor dev_descriptor;
 extern const struct usb_config_descriptor config_descriptor;
 extern const char *usb_strings[];
 
-void usb_descriptors_set_unique_serial(); /* Set serial number to processor id */
+void usb_descriptors_set_unique_serial(void); /* Set serial number to processor id */
 

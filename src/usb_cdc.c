@@ -6,6 +6,7 @@
 #include <libopencm3/stm32/desig.h> // For getting device uniq id -> usb serial
 
 #include "usb_descriptors.h"
+#include "usb_cdc.h"
 
 /* Global USB device handle */
 static usbd_device *usbdev;

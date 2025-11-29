@@ -1,14 +1,14 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/flash.h>
 #include <libopencm3/stm32/gpio.h>
-#include <libopencm3/usb/usbd.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/usb/usbd.h>
 
 
 #include <stddef.h> /* for NULL */
 
-#include "usb_descriptors.h"  /* dev_descriptor, config_descriptor, usb_strings, usb_set_config */
 #include "usb_cdc.h"
+#include "usart.h"
 
 
 
@@ -60,26 +60,6 @@ void hard_fault_handler(void)
         for (volatile int i = 0; i < 500000; i++);
     }
 }
-
-
-/* --------------------------------------------------------------------------
- * USART Setup
- * -------------------------------------------------------------------------- */
-static void usart_setup(void)
-{
-
-    	/* Setup USART2 parameters. */
-	usart_set_baudrate(USART2, 19200);
-	usart_set_databits(USART2, 8);
-	usart_set_stopbits(USART2, USART_STOPBITS_1);
-	usart_set_mode(USART2, USART_MODE_TX);
-	usart_set_parity(USART2, USART_PARITY_NONE);
-	usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
-
-	/* Finally enable the USART. */
-	usart_enable(USART2);
-}
-
 
 /* --------------------------------------------------------------------------
  * main()
