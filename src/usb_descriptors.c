@@ -179,8 +179,8 @@ static char usb_serial[25] = "STM32 Unique ID";
 
 
 const char *usb_strings[] = {
-    "Your Manufacturer",        /* 1 */
-    "STM32F411 Dual CDC",       /* 2 */
+    "VK3DCU - Code Hax",        /* 1 */
+    "FT7900 Radio head adapter",       /* 2 */
     usb_serial,                /* 3 */  // The hexidecimal equivilent of the device unique ID registers
 };
 
