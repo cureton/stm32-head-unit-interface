@@ -25,5 +25,15 @@ int ringbuf_write(ringbuf_t *rb, const uint8_t *src, int len)
         rb->buf[rb->head] = src[n++];
         rb->head = ringbuf_next(rb, rb->head);
     }
+
+    /* Callback conditions:
+     *   fn_ptr not null and 
+     *   - n > 0: data was written, OR
+     *   - buffer is full: writer is blocked
+     */
+
+    if (rb->write_notify_cb && (n > 0 || ringbuf_full(rb))) {
+        rb->write_notify_cb();
+    }  
     return n;
 }

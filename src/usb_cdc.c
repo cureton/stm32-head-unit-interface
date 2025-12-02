@@ -113,6 +113,8 @@ static void cdc_data_rx_cb(usbd_device *dev, uint8_t ep)
 static void cdc_data_tx_cb(usbd_device *dev, uint8_t ep)
 {
     (void)dev; (void)ep;
+
+    gpio_toggle(GPIOC, GPIO13);
     usb_start_tx();
 }
 
@@ -153,10 +155,31 @@ static void usb_start_tx(void)
     usbd_ep_write_packet(usbdev, EP_CDC0_IN, pkt, n);
 }
 
+void usb_cdc_ringbuf_write_notify_cb()  
+{
+	/* Nothing listening  - flush buffer discarding data */
+	if  ( ctx.control_line_DTR == false )
+        {
+	    ringbuf_flush(ctx.tx_rb)
+	    return 
+        }
+
+	/* TX Idle,  start it */
+ 	if ( ctx.tx_idle ) 
+        {
+           usb_start_tx();
+        }
+	
+	/* TX is running -  do nothing, ISR  will consume ring buffer */
+	return ;
+}
+
+
+
 
 void usb_cdc_write(const uint8_t *data, int len)
 {
-    /* Do not  accet date to usb until DTR line is asserted by host */
+    /* Do not accept date to usb until DTR line is asserted by host */
     /* DTR is true when host is connected */
     if ( ctx.control_line_DTR == false ) 
         return;

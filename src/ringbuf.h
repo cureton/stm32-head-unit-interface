@@ -10,12 +10,20 @@
  * Size MUST be a power of two: e.g. 32, 64, 128, 256, 512...
  */
 
+
+
+typedef void (*ringbuf_notify_cb_t)(void);
+
 typedef struct {
     uint8_t  *buf;
     uint16_t  size;
     volatile uint16_t head;
     volatile uint16_t tail;
+    ringbuf_notify_cb_t write_notify_cb;
 } ringbuf_t;
+
+
+
 
 /* Initialise ring buffer using user-provided storage */
 static inline void ringbuf_init(ringbuf_t *rb, uint8_t *storage, uint16_t size)
@@ -24,6 +32,7 @@ static inline void ringbuf_init(ringbuf_t *rb, uint8_t *storage, uint16_t size)
     rb->size = size;
     rb->head = 0;
     rb->tail = 0;
+    rb->write_notify_cb = NULL;
 }
 
 /* Internal helper */
@@ -56,6 +65,11 @@ static inline uint16_t ringbuf_count(const ringbuf_t *rb)
 static inline uint16_t ringbuf_free(const ringbuf_t *rb)
 {
     return rb->size - 1 - ringbuf_count(rb);
+}
+
+static inline void ringbuf_flush(ringbuf_t *rb)
+{
+    rb->tail = rb->head;
 }
 
 /* Single-byte operations (ISR safe, fully inline) */

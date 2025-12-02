@@ -106,9 +106,9 @@ int main(void)
         }
         if ( count > 500000 )
         {
-            uint8_t buf[]="hello\n";
-            usb_cdc_write(buf, sizeof(buf));
-            gpio_toggle(GPIOC, GPIO13);
+ //           uint8_t buf[]="hello\n";
+//            usb_cdc_write(buf, sizeof(buf));
+        //    gpio_toggle(GPIOC, GPIO13);
 	    count = 0;
         } else {
             count++;
