@@ -37,3 +37,11 @@ int ringbuf_write(ringbuf_t *rb, const uint8_t *src, int len)
     }  
     return n;
 }
+
+void ringbuf_set_write_notify_fn(ringbuf_t *rb, ringbuf_notify_cb_t write_notify_cb_fn)
+{
+    rb->write_notify_cb = write_notify_cb_fn;
+
+}
+
+

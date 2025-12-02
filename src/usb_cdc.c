@@ -160,8 +160,8 @@ void usb_cdc_ringbuf_write_notify_cb()
 	/* Nothing listening  - flush buffer discarding data */
 	if  ( ctx.control_line_DTR == false )
         {
-	    ringbuf_flush(ctx.tx_rb)
-	    return 
+	    ringbuf_flush(ctx.tx_rb_ptr);
+	    return;
         }
 
 	/* TX Idle,  start it */
