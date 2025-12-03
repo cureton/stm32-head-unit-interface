@@ -84,7 +84,9 @@ int main(void)
 
     /* Initialise ring buffer structures */
     ringbuf_init(&usart_tx_rb, usart_tx_buf, sizeof(usart_tx_rb));
+
     ringbuf_init(&usb_cdc_tx_rb, usb_cdc_tx_buf, sizeof(usb_cdc_tx_rb));
+    ringbuf_set_write_notify_fn(&usb_cdc_tx_rb, usb_cdc_ringbuf_write_notify_cb);
 
     usb_cdc_set_tx_rb_ptr(&usb_cdc_tx_rb);   
     usb_cdc_set_rx_rb_ptr(&usart_tx_rb);   
@@ -100,7 +102,7 @@ int main(void)
         /* Read the USSRT if data is ready */
         if (USART_SR(USART1) & USART_SR_RXNE) {
             uint8_t b = USART_DR(USART1);
-            usb_cdc_write(&b, 1);
+            ringbuf_write(&usb_cdc_tx_rb, &b, 1);
 
 //            gpio_toggle(GPIOC, GPIO13);
         }

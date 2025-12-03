@@ -103,11 +103,20 @@ static void cdc_data_rx_cb(usbd_device *dev, uint8_t ep)
 {
     (void)ep;
     uint8_t buf[64];
+
+    /* if we can not store the largest endpoint packete, then 
+       do not read the endpoint which will cause usb subsystem to NAK packet 
+       providing backpressure to host.  Host will retry packet later,  unstalling the pipeline
+    */
+
+    if (ringbuf_free(ctx.rx_rb_ptr) < sizeof(buf))
+    {
+	/* No room at the inn */
+        return;
+    }  
+
     int len = usbd_ep_read_packet(dev, EP_CDC0_OUT, buf, sizeof(buf));
-    if (len > 0) {
-//        usbd_ep_write_packet(usbdev, EP_CDC0_IN, buf, len);
-//        usb_cdc_write(buf, len);
-    }
+ 
 }
 
 static void cdc_data_tx_cb(usbd_device *dev, uint8_t ep)
