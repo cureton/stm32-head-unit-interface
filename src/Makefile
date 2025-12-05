@@ -13,7 +13,6 @@ OOCD_INTERFACE = stlink-v2
 OOCD_TARGET = stm32f4x
 
 
-
 # You shouldn't have to edit anything below here.
 VPATH += $(SHARED_DIR)
 INCLUDES += $(patsubst %,-I%, . $(SHARED_DIR))

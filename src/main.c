@@ -29,7 +29,8 @@ static void clock_setup(void)
     rcc_periph_clock_enable(RCC_OTGFS);
     rcc_periph_reset_pulse(RST_OTGFS);
 
-    /* USART 2 */
+    /* USART  */
+
     rcc_periph_clock_enable(RCC_USART1);
     rcc_periph_clock_enable(RCC_GPIOB);
 }
@@ -66,10 +67,11 @@ static void gpio_setup(void)
     *  USART - Enable USART1 output on alternate function pins 
     ****************************************/
 
+    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6); /* Note: Can not have pullup on output, output stops */
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO7);
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
     gpio_set_af(GPIOB, GPIO_AF7, GPIO6 | GPIO7);
     gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO6 | GPIO7);
+
 
 }
 
@@ -114,9 +116,10 @@ int main(void)
 
 
     // Initialise USB-CDC and register callback 
-    usb_cdc_setup(&usb_cdc_tx_rb,&usart_tx_rb);   
+    usb_cdc_init(&usb_cdc_tx_rb,&usart_tx_rb);   
 
     // Initialise USART and register callback 
+
     usart_init(&usart_ctx, USART1, &usart_tx_rb, &usb_cdc_tx_rb);
 	
    int count=0;
