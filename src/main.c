@@ -11,7 +11,8 @@
 #include "usart.h"
 
 
-
+/* Global usart context - available for ISR routines */
+usart_ctx_t usart_ctx;  /* USART context storage */
 
 /* --------------------------------------------------------------------------
  * Clock Setup
@@ -39,7 +40,11 @@ static void clock_setup(void)
  * -------------------------------------------------------------------------- */
 static void gpio_setup(void)
 {
-    /* USB pins: PA11 = DM, PA12 = DP (AF10) */
+    /***************************************
+    *  usb - enable usb output on alternate function pins 
+    ****************************************/
+
+   /* USB pins: PA11 = DM, PA12 = DP (AF10) */
     gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11 | GPIO12);
     gpio_set_af(GPIOA, GPIO_AF10, GPIO11 | GPIO12);
 
@@ -47,11 +52,23 @@ static void gpio_setup(void)
     gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO9);
     gpio_set(GPIOA, GPIO9);
 
-    /* Optional: PC13 as LED output */
+
+    /***************************************
+    *  LED - enable GPIO for LED on blackpill board 
+    ****************************************/
+
+    // PC13 as LED output 
     gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
     gpio_set(GPIOC, GPIO13); /* LED off (board-dependent) */
 
+ 
+    /***************************************
+    *  USART - Enable USART1 output on alternate function pins 
+    ****************************************/
 
+    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO6 | GPIO7);
+    gpio_set_af(GPIOB, GPIO_AF7, GPIO6 | GPIO7);
+    gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO6 | GPIO7);
 
 }
 
@@ -65,6 +82,15 @@ void hard_fault_handler(void)
     }
 }
 
+
+void usart1_isr(void) 
+{
+    usart_irq_handler(&usart_ctx);
+    gpio_toggle(GPIOC, GPIO13);
+}
+
+
+
 /* --------------------------------------------------------------------------
  * main()
  * -------------------------------------------------------------------------- */
@@ -77,45 +103,38 @@ int main(void)
     uint8_t usb_cdc_tx_buf[256];            // backing store
     ringbuf_t usb_cdc_tx_rb;
 
+
     clock_setup();
     gpio_setup();
 
-    usb_cdc_setup();
 
     /* Initialise ring buffer structures */
     ringbuf_init(&usart_tx_rb, usart_tx_buf, sizeof(usart_tx_rb));
-
     ringbuf_init(&usb_cdc_tx_rb, usb_cdc_tx_buf, sizeof(usb_cdc_tx_rb));
-    ringbuf_set_write_notify_fn(&usb_cdc_tx_rb, usb_cdc_ringbuf_write_notify_cb);
 
+
+    // Initialise USB-CDC and register callback 
+    usb_cdc_setup();
     usb_cdc_set_tx_rb_ptr(&usb_cdc_tx_rb);   
     usb_cdc_set_rx_rb_ptr(&usart_tx_rb);   
+    ringbuf_set_write_notify_fn(&usb_cdc_tx_rb, usb_cdc_ringbuf_write_notify_cb);
 
-    usart_setup();
 
+    // Initialise USART and register callback 
+    usart_init(&usart_ctx, USART1, &usart_tx_rb, &usb_cdc_tx_rb);
 	
    int count=0;
 
     while (1) {
         usb_cdc_poll();
 
-        /* Read the USSRT if data is ready */
-        if (USART_SR(USART1) & USART_SR_RXNE) {
-            uint8_t b = USART_DR(USART1);
-            ringbuf_write(&usb_cdc_tx_rb, &b, 1);
-
-//            gpio_toggle(GPIOC, GPIO13);
-        }
         if ( count > 500000 )
         {
- //           uint8_t buf[]="hello\n";
-//            usb_cdc_write(buf, sizeof(buf));
-        //    gpio_toggle(GPIOC, GPIO13);
+            gpio_toggle(GPIOC, GPIO13);
 	    count = 0;
         } else {
             count++;
         }
     }
-
     return 0;
 }

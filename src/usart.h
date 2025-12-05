@@ -1,22 +1,19 @@
 #pragma once
 
+#pragma once
 #include <libopencm3/stm32/usart.h>
-
-#include <stdint.h>
-#include <stdbool.h>
 #include "ringbuf.h"
 
-/* You choose the size */
-#define USART_TX_BUF_SIZE 256
+typedef struct {
+    uint32_t usart;
+    ringbuf_t *tx_rb_ptr;
+    ringbuf_t *rx_rb_ptr;
+    volatile int tx_idle;
+} usart_ctx_t;
 
-void usart_setup(void);
+void usart_init(usart_ctx_t *ctx, uint32_t usart,
+                ringbuf_t *tx_rb_ptr, ringbuf_t *rx_rb_ptr);
 
-/* RX forwarding: register ringbuffer to insert receved characters into*/
-void usart_set_usb_rx_ringbuf(ringbuf_t *rb);
-
-/* get TX ringbuffer reference to external software to write into */
-ringbuf_t *usart_get_tx_ringbuf(void);
-
-/* Send data out the UART */
-int usart_write(const uint8_t *data, int len);
+void usart_tx_notify_cb(void);
+void usart_irq_handler(usart_ctx_t *ctx);
 

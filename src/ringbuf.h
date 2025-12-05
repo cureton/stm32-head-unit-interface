@@ -11,8 +11,8 @@
  */
 
 
-
-typedef void (*ringbuf_notify_cb_t)(void);
+// Callback function type definition 
+typedef void (*ringbuf_notify_cb_t)(void *ctx);
 
 typedef struct {
     uint8_t  *buf;
@@ -20,9 +20,8 @@ typedef struct {
     volatile uint16_t head;
     volatile uint16_t tail;
     ringbuf_notify_cb_t write_notify_cb;
+    void *write_notify_cb_ctx;
 } ringbuf_t;
-
-
 
 
 /* Initialise ring buffer using user-provided storage */
@@ -33,6 +32,7 @@ static inline void ringbuf_init(ringbuf_t *rb, uint8_t *storage, uint16_t size)
     rb->head = 0;
     rb->tail = 0;
     rb->write_notify_cb = NULL;
+    rb->write_notify_cb_ctx = NULL;
 }
 
 /* Internal helper */

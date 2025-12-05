@@ -1,84 +1,90 @@
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/stm32/f4/nvic.h> /* For interrupts */
 
 #include <libopencm3/stm32/gpio.h>
 
 #include "ringbuf.h"
 #include "usart.h"
 
-/* --------------------------------------------------------------------------
- * Transmission Ring buffer 
- * -------------------------------------------------------------------------- */
-static ringbuf_t tx_rb;
+static void usart_tx_notify(void);
 
- /* pointer to ring buffer for receved characters. i.e USB CDC tx ring buffer */
+// Maybe we should a the context to ringbuffer call back interface, given we are dereferencing via a functon call  
+static usart_ctx_t *notify_ctx = NULL;
 
-static ringbuf_t *rx_rb = NULL;
+// Forward declarations
+static void usart_start_tx(usart_ctx_t *ctx);
 
-/* Track current transmission state */
-static volatile bool tx_idle = true;
-
-/* --------------------------------------------------------------------------
- * USART Setup
- * -------------------------------------------------------------------------- */
-void usart_setup(void)
+void usart_tx_notify_cb(void)
 {
-
-
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO6 | GPIO7);
-    gpio_set_af(GPIOB, GPIO_AF7, GPIO6 | GPIO7);
-    gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO6 | GPIO7);
-
-
-    /* Setup USART1 parameters. */
-    usart_set_baudrate(USART1, 19200);
-    usart_set_databits(USART1, 8);
-    usart_set_stopbits(USART1, USART_STOPBITS_1);
-    usart_set_mode(USART1, USART_MODE_TX_RX);
-    usart_set_parity(USART1, USART_PARITY_NONE);
-    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-
-    /* Finally enable the USART. */
-    usart_enable(USART1);
-}
-
-
-/* --------------------------------------------------------------------------
- * Register USB CDC RX ringbuffer (UART RX → USB TX)
- * -------------------------------------------------------------------------- */
-void usart_set_usb_rx_ringbuf(ringbuf_t *rb)
-{
-    rx_rb = rb;
-}
-
-/* --------------------------------------------------------------------------
- * Register USB CDC RX ringbuffer (UART RX → USB TX)
- * -------------------------------------------------------------------------- */
-ringbuf_t *usart_get_tx_ringbuf(void)
-{
-    return &tx_rb;
-}
-
-
-/* --------------------------------------------------------------------------
- * Notify callback: registed  to ringbuffer to notifiy usart of writes that may 
- * required us to start the tranmistter 
- * -------------------------------------------------------------------------- */
-static void usart_tx_notify_cb(void *arg)
-{
-    (void)arg;
-
-    /* Only start TX when USART is idle */
-    if (tx_idle && !ringbuf_empty(&tx_rb)) {
-        tx_idle = false;
-        usart_enable_tx_interrupt(USART1);
+    if (notify_ctx) {
+        usart_start_tx(notify_ctx);
     }
 }
 
-/* --------------------------------------------------------------------------
- * Non-blocking write into TX ringbuffer
- * -------------------------------------------------------------------------- */
-int usart_write(const uint8_t *data, int len)
+void usart_init(usart_ctx_t *ctx, uint32_t usart,
+                ringbuf_t *tx_rb_ptr, ringbuf_t *rx_rb_ptr)
 {
-    return ringbuf_write(&tx_rb, data, len);
+    ctx->usart = usart;
+    ctx->tx_rb_ptr = tx_rb_ptr;
+    ctx->rx_rb_ptr = rx_rb_ptr;
+    ctx->tx_idle = 1;
+
+    // Allow TX ring buffer to wake the USART driver 
+    if (ctx->tx_rb_ptr != NULL) 
+    { 
+        ctx->tx_rb_ptr->write_notify_cb = usart_tx_notify_cb;
+        notify_ctx = ctx;
+    } 
+
+    // Configure USART hardware 
+    usart_set_baudrate(usart, 19200);
+    usart_set_databits(usart, 8);
+    usart_set_stopbits(usart, USART_STOPBITS_1);
+    usart_set_mode(usart, USART_MODE_TX_RX);
+    usart_set_parity(usart, USART_PARITY_NONE);
+    usart_set_flow_control(usart, USART_FLOWCONTROL_NONE);
+
+
+    usart_enable_rx_interrupt(usart);
+    nvic_enable_irq(NVIC_USART1_IRQ);
+
+    usart_enable(usart);
 }
 
+
+static void usart_start_tx(usart_ctx_t *ctx)
+{
+    if (!ctx->tx_idle)
+        return;
+
+    uint8_t b;
+    if (ringbuf_read(ctx->tx_rb_ptr, &b, 1) == 1) {
+        ctx->tx_idle = 0;
+        usart_send(ctx->usart, b);
+        usart_enable_tx_interrupt(ctx->usart);
+    }
+}
+
+void usart_irq_handler(usart_ctx_t *ctx)
+{
+    uint32_t us = ctx->usart;
+
+    /* RX interrupt */
+    if (usart_get_flag(us, USART_SR_RXNE)) {
+        uint8_t b = usart_recv(us);
+ 	// could check for overrun here on 0 length returned  - but that is unlikely 
+        ringbuf_write(ctx->rx_rb_ptr, &b, 1);
+    }
+
+    /* TX interrupt */
+    if (usart_get_flag(us, USART_SR_TXE)) {
+        uint8_t b;
+        if (ringbuf_read(ctx->tx_rb_ptr, &b, 1) == 1) {
+            usart_send(us, b);
+        } else {
+            /* Nothing left → go idle */
+            ctx->tx_idle = 1;
+            usart_disable_tx_interrupt(us);
+        }
+    }
+}

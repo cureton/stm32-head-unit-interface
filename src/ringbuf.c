@@ -33,7 +33,7 @@ int ringbuf_write(ringbuf_t *rb, const uint8_t *src, int len)
      */
 
     if (rb->write_notify_cb && (n > 0 || ringbuf_full(rb))) {
-        rb->write_notify_cb();
+        rb->write_notify_cb(rb->write_notify_cb_ctx);
     }  
     return n;
 }

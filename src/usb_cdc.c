@@ -164,7 +164,7 @@ static void usb_start_tx(void)
     usbd_ep_write_packet(usbdev, EP_CDC0_IN, pkt, n);
 }
 
-void usb_cdc_ringbuf_write_notify_cb()  
+void usb_cdc_ringbuf_write_notify_cb(void  *passed_ctx)  
 {
 	/* Nothing listening  - flush buffer discarding data */
 	if  ( ctx.control_line_DTR == false )
