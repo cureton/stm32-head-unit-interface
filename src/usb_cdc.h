@@ -7,12 +7,9 @@
 #include "ringbuf.h"
 
 
-void usb_cdc_setup(void);
+void usb_cdc_setup(ringbuf_t* tx_rb, ringbuf_t* rx_rb);
 void usb_cdc_poll(void);
 
 void usb_cdc_write(const uint8_t *data, int len);
 
-
-void usb_cdc_set_tx_rb_ptr(ringbuf_t* rb);
-void usb_cdc_set_rx_rb_ptr(ringbuf_t* rb);
 void usb_cdc_ringbuf_write_notify_cb(void * ctx);

@@ -114,11 +114,7 @@ int main(void)
 
 
     // Initialise USB-CDC and register callback 
-    usb_cdc_setup();
-    usb_cdc_set_tx_rb_ptr(&usb_cdc_tx_rb);   
-    usb_cdc_set_rx_rb_ptr(&usart_tx_rb);   
-    ringbuf_set_write_notify_fn(&usb_cdc_tx_rb, usb_cdc_ringbuf_write_notify_cb, NULL);
-
+    usb_cdc_setup(&usb_cdc_tx_rb,&usart_tx_rb);   
 
     // Initialise USART and register callback 
     usart_init(&usart_ctx, USART1, &usart_tx_rb, &usb_cdc_tx_rb);
