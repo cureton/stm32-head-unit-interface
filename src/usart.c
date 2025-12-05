@@ -6,19 +6,15 @@
 #include "ringbuf.h"
 #include "usart.h"
 
-static void usart_tx_notify(void);
-
-// Maybe we should a the context to ringbuffer call back interface, given we are dereferencing via a functon call  
-static usart_ctx_t *notify_ctx = NULL;
 
 // Forward declarations
+void usart_tx_notify_cb(void *ctx);
 static void usart_start_tx(usart_ctx_t *ctx);
 
-void usart_tx_notify_cb(void)
+
+void usart_tx_notify_cb(void *ctx)
 {
-    if (notify_ctx) {
-        usart_start_tx(notify_ctx);
-    }
+    usart_start_tx((usart_ctx_t *) ctx );
 }
 
 void usart_init(usart_ctx_t *ctx, uint32_t usart,
@@ -32,8 +28,7 @@ void usart_init(usart_ctx_t *ctx, uint32_t usart,
     // Allow TX ring buffer to wake the USART driver 
     if (ctx->tx_rb_ptr != NULL) 
     { 
-        ctx->tx_rb_ptr->write_notify_cb = usart_tx_notify_cb;
-        notify_ctx = ctx;
+        ringbuf_set_write_notify_fn(ctx->tx_rb_ptr, usart_tx_notify_cb, (void *)ctx);
     } 
 
     // Configure USART hardware 
@@ -54,12 +49,14 @@ void usart_init(usart_ctx_t *ctx, uint32_t usart,
 
 static void usart_start_tx(usart_ctx_t *ctx)
 {
+
     if (!ctx->tx_idle)
         return;
 
     uint8_t b;
     if (ringbuf_read(ctx->tx_rb_ptr, &b, 1) == 1) {
         ctx->tx_idle = 0;
+        gpio_clear(GPIOC,GPIO13);
         usart_send(ctx->usart, b);
         usart_enable_tx_interrupt(ctx->usart);
     }
@@ -83,6 +80,7 @@ void usart_irq_handler(usart_ctx_t *ctx)
             usart_send(us, b);
         } else {
             /* Nothing left → go idle */
+            gpio_set(GPIOC,GPIO13);
             ctx->tx_idle = 1;
             usart_disable_tx_interrupt(us);
         }

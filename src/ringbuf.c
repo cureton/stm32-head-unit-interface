@@ -32,16 +32,17 @@ int ringbuf_write(ringbuf_t *rb, const uint8_t *src, int len)
      *   - buffer is full: writer is blocked
      */
 
-    if (rb->write_notify_cb && (n > 0 || ringbuf_full(rb))) {
+//    if (rb->write_notify_cb && (n > 0 || ringbuf_full(rb))) {
+    if (rb->write_notify_cb) {
         rb->write_notify_cb(rb->write_notify_cb_ctx);
     }  
     return n;
 }
 
-void ringbuf_set_write_notify_fn(ringbuf_t *rb, ringbuf_notify_cb_t write_notify_cb_fn)
+void ringbuf_set_write_notify_fn(ringbuf_t *rb, ringbuf_notify_cb_t write_notify_cb_fn, void *write_nofify_cb_ctx)
 {
     rb->write_notify_cb = write_notify_cb_fn;
-
+    rb->write_notify_cb_ctx = write_nofify_cb_ctx;
 }
 
 

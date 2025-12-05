@@ -66,7 +66,8 @@ static void gpio_setup(void)
     *  USART - Enable USART1 output on alternate function pins 
     ****************************************/
 
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO6 | GPIO7);
+    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO7);
+    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
     gpio_set_af(GPIOB, GPIO_AF7, GPIO6 | GPIO7);
     gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO6 | GPIO7);
 
@@ -77,7 +78,7 @@ static void gpio_setup(void)
 void hard_fault_handler(void)
 {
     while (1) {
-        gpio_toggle(GPIOC, GPIO13);
+        //gpio_toggle(GPIOC, GPIO13);
         for (volatile int i = 0; i < 500000; i++);
     }
 }
@@ -86,7 +87,6 @@ void hard_fault_handler(void)
 void usart1_isr(void) 
 {
     usart_irq_handler(&usart_ctx);
-    gpio_toggle(GPIOC, GPIO13);
 }
 
 
@@ -109,15 +109,15 @@ int main(void)
 
 
     /* Initialise ring buffer structures */
-    ringbuf_init(&usart_tx_rb, usart_tx_buf, sizeof(usart_tx_rb));
-    ringbuf_init(&usb_cdc_tx_rb, usb_cdc_tx_buf, sizeof(usb_cdc_tx_rb));
+    ringbuf_init(&usart_tx_rb, usart_tx_buf, sizeof(usart_tx_buf));
+    ringbuf_init(&usb_cdc_tx_rb, usb_cdc_tx_buf, sizeof(usb_cdc_tx_buf));
 
 
     // Initialise USB-CDC and register callback 
     usb_cdc_setup();
     usb_cdc_set_tx_rb_ptr(&usb_cdc_tx_rb);   
     usb_cdc_set_rx_rb_ptr(&usart_tx_rb);   
-    ringbuf_set_write_notify_fn(&usb_cdc_tx_rb, usb_cdc_ringbuf_write_notify_cb);
+    ringbuf_set_write_notify_fn(&usb_cdc_tx_rb, usb_cdc_ringbuf_write_notify_cb, NULL);
 
 
     // Initialise USART and register callback 
@@ -130,7 +130,6 @@ int main(void)
 
         if ( count > 500000 )
         {
-            gpio_toggle(GPIOC, GPIO13);
 	    count = 0;
         } else {
             count++;

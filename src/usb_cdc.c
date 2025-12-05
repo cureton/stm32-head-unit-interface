@@ -108,7 +108,7 @@ static void cdc_data_rx_cb(usbd_device *dev, uint8_t ep)
        do not read the endpoint which will cause usb subsystem to NAK packet 
        providing backpressure to host.  Host will retry packet later,  unstalling the pipeline
     */
-
+   
     if (ringbuf_free(ctx.rx_rb_ptr) < sizeof(buf))
     {
 	/* No room at the inn */
@@ -116,6 +116,8 @@ static void cdc_data_rx_cb(usbd_device *dev, uint8_t ep)
     }  
 
     int len = usbd_ep_read_packet(dev, EP_CDC0_OUT, buf, sizeof(buf));
+
+    ringbuf_write(ctx.rx_rb_ptr, buf, len);
  
 }
 
@@ -123,7 +125,6 @@ static void cdc_data_tx_cb(usbd_device *dev, uint8_t ep)
 {
     (void)dev; (void)ep;
 
-    gpio_toggle(GPIOC, GPIO13);
     usb_start_tx();
 }
 
@@ -166,6 +167,8 @@ static void usb_start_tx(void)
 
 void usb_cdc_ringbuf_write_notify_cb(void  *passed_ctx)  
 {
+	(void) passed_ctx;  /* Must use passed context and register is */
+
 	/* Nothing listening  - flush buffer discarding data */
 	if  ( ctx.control_line_DTR == false )
         {

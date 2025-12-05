@@ -96,6 +96,6 @@ static inline int ringbuf_get(ringbuf_t *rb, uint8_t *out)
 /* Bulk multi-byte ops (optional, non-inline) */
 int ringbuf_read(ringbuf_t *rb, uint8_t *dst, int len);
 int ringbuf_write(ringbuf_t *rb, const uint8_t *src, int len);
-void ringbuf_set_write_notify_fn(ringbuf_t *rb, ringbuf_notify_cb_t write_notify_cb_fn);
+void ringbuf_set_write_notify_fn(ringbuf_t *rb, ringbuf_notify_cb_t write_notify_cb_fn, void *write_notify_cb_fn_ctx);
 #endif /* RINGBUF_H */
 

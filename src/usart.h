@@ -14,6 +14,5 @@ typedef struct {
 void usart_init(usart_ctx_t *ctx, uint32_t usart,
                 ringbuf_t *tx_rb_ptr, ringbuf_t *rx_rb_ptr);
 
-void usart_tx_notify_cb(void);
 void usart_irq_handler(usart_ctx_t *ctx);
 
