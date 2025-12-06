@@ -1,5 +1,4 @@
 #include <libopencm3/stm32/usart.h>
-#include <libopencm3/stm32/f4/nvic.h> /* For interrupts */
 
 #include <libopencm3/stm32/gpio.h>
 
@@ -41,7 +40,6 @@ void usart_init(usart_ctx_t *ctx, uint32_t usart,
 
 
     usart_enable_rx_interrupt(usart);
-    nvic_enable_irq(NVIC_USART1_IRQ);
 
     usart_enable(usart);
 }

@@ -10,6 +10,8 @@ OBJS := $(SRCS:.c=.o)
 
 TARGET := test_ringbuf
 
+test: all 
+	./test_ringbuf
 all: $(TARGET)
 
 $(TARGET): $(OBJS)

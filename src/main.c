@@ -119,8 +119,11 @@ int main(void)
     usb_cdc_init(&usb_cdc_tx_rb,&usart_tx_rb);   
 
     // Initialise USART and register callback 
-
     usart_init(&usart_ctx, USART1, &usart_tx_rb, &usb_cdc_tx_rb);
+ 
+    // Enable USART1 in interrupt controller 
+    nvic_enable_irq(NVIC_USART1_IRQ);
+
 	
    int count=0;
 

@@ -33,6 +33,7 @@ void usb_set_config(usbd_device *usbd_dev, uint16_t wValue);
 static void usb_start_tx(void);
 static void cdc_data_rx_cb(usbd_device *dev, uint8_t ep);
 static void cdc_data_tx_cb(usbd_device *dev, uint8_t ep);
+void usb_cdc_ringbuf_write_notify_cb(void  *passed_ctx); 
 
 /* --------------------------------------------------------------------------
  * Class hooks
@@ -169,7 +170,7 @@ void usb_cdc_ringbuf_write_notify_cb(void  *passed_ctx)
 {
 	(void) passed_ctx;  /* Must use passed context and register is */
 
-	/* Nothing listening  - flush buffer discarding data */
+	/* Nothing listening  - flush buffer discarding data - probably should no so ringbuffers can have backpressure even if nothing listening */
 	if  ( ctx.control_line_DTR == false )
         {
 	    ringbuf_flush(ctx.tx_rb_ptr);
@@ -186,49 +187,23 @@ void usb_cdc_ringbuf_write_notify_cb(void  *passed_ctx)
 	return ;
 }
 
-
-
-
-void usb_cdc_write(const uint8_t *data, int len)
-{
-    /* Do not accept date to usb until DTR line is asserted by host */
-    /* DTR is true when host is connected */
-    if ( ctx.control_line_DTR == false ) 
-        return;
-
-    ringbuf_write(ctx.tx_rb_ptr, data, len);
-    if (ctx.tx_idle)
-        usb_start_tx();
-}
-
-void usb_cdc_set_tx_rb_ptr(ringbuf_t* rb)
-{
-	ctx.tx_rb_ptr = rb;
-}
-
-void usb_cdc_set_rx_rb_ptr(ringbuf_t* rb)
-{
-	ctx.rx_rb_ptr = rb;
-}
-
-
-
 /* --------------------------------------------------------------------------
  * USB Setup
  * -------------------------------------------------------------------------- */
-void usb_cdc_setup(void)
+void usb_cdc_init(ringbuf_t* tx_rb_ptr, ringbuf_t* rx_rb_ptr)
 {
 
     /* Replace placeholder with processor serial number to allow unique udev rules */
     usb_descriptors_set_unique_serial();
 
+    ctx.tx_rb_ptr = tx_rb_ptr;
+    ctx.rx_rb_ptr = rx_rb_ptr;
+    ringbuf_set_write_notify_fn(tx_rb_ptr, usb_cdc_ringbuf_write_notify_cb, &ctx);
 
-
-    ctx.rx_rb_ptr = NULL;
-    ctx.tx_rb_ptr = NULL;
     ctx.tx_idle=true;
     ctx.control_line_DTR=false;
     ctx.control_line_RTS=false;
+
 
     usbdev = usbd_init(&otgfs_usb_driver,
                        &dev_descriptor,
