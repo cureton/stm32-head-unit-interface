@@ -11,7 +11,7 @@
 #include "usb_cdc.h"
 #include "usart.h"
 
-#define USE_USART1 
+//#define USE_USART1 
 
 /* Global usart context - available for ISR routines */
 usart_ctx_t usart_ctx;  /* USART context storage */
