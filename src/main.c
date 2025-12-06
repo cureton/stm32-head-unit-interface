@@ -11,6 +11,7 @@
 #include "usb_cdc.h"
 #include "usart.h"
 
+#define USE_USART1 
 
 /* Global usart context - available for ISR routines */
 usart_ctx_t usart_ctx;  /* USART context storage */
@@ -31,9 +32,14 @@ static void clock_setup(void)
     rcc_periph_reset_pulse(RST_OTGFS);
 
     /* USART  */
-
+#ifdef USE_USART1
     rcc_periph_clock_enable(RCC_USART1);
     rcc_periph_clock_enable(RCC_GPIOB);
+#else
+    rcc_periph_clock_enable(RCC_USART2);
+    rcc_periph_clock_enable(RCC_GPIOA);
+#endif
+
 }
 
 
@@ -68,11 +74,16 @@ static void gpio_setup(void)
     *  USART - Enable USART1 output on alternate function pins 
     ****************************************/
 
+#ifdef USE_USART1
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6); /* Note: Can not have pullup on output, output stops */
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO7);
     gpio_set_af(GPIOB, GPIO_AF7, GPIO6 | GPIO7);
     gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO6 | GPIO7);
-
+#else
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2); /* Note: Can not have pullup on output, output stops */
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO3);
+    gpio_set_af(GPIOA, GPIO_AF7, GPIO2 | GPIO3);
+#endif
 
 }
 
@@ -87,12 +98,18 @@ void hard_fault_handler(void)
 }
 
 
+#ifdef USE_USART1
 void usart1_isr(void) 
 {
     usart_irq_handler(&usart_ctx);
 }
 
-
+#else
+void usart2_isr(void) 
+{
+    usart_irq_handler(&usart_ctx);
+}
+#endif
 
 /* --------------------------------------------------------------------------
  * main()
@@ -120,11 +137,18 @@ int main(void)
     usb_cdc_init(&usb_cdc_tx_rb,&usart_tx_rb);   
 
     // Initialise USART and register callback 
+#ifdef USE_USART1
     usart_init(&usart_ctx, USART1, &usart_tx_rb, &usb_cdc_tx_rb);
- 
-    // Enable USART1 in interrupt controller 
-    nvic_enable_irq(NVIC_USART1_IRQ);
+#else 
+    usart_init(&usart_ctx, USART2, &usart_tx_rb, &usb_cdc_tx_rb);
+#endif
 
+    // Enable USART1 in interrupt controller 
+#ifdef USE_USART1
+    nvic_enable_irq(NVIC_USART1_IRQ);
+#else 
+    nvic_enable_irq(NVIC_USART2_IRQ);
+#endif
 	
    int count=0;
 
