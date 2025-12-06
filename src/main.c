@@ -3,6 +3,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/usb/usbd.h>
+#include <libopencm3/stm32/f4/nvic.h> /* For interrupts */
 
 
 #include <stddef.h> /* for NULL */
