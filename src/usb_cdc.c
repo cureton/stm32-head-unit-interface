@@ -190,20 +190,12 @@ void usb_cdc_ringbuf_write_notify_cb(void  *passed_ctx)
 /* --------------------------------------------------------------------------
  * USB Setup
  * -------------------------------------------------------------------------- */
-void usb_cdc_init(ringbuf_t* tx_rb_ptr, ringbuf_t* rx_rb_ptr)
-{
 
+
+void usb_core_init()
+{
     /* Replace placeholder with processor serial number to allow unique udev rules */
     usb_descriptors_set_unique_serial();
-
-    ctx.tx_rb_ptr = tx_rb_ptr;
-    ctx.rx_rb_ptr = rx_rb_ptr;
-    ringbuf_set_write_notify_fn(tx_rb_ptr, usb_cdc_ringbuf_write_notify_cb, &ctx);
-
-    ctx.tx_idle=true;
-    ctx.control_line_DTR=false;
-    ctx.control_line_RTS=false;
-
 
     usbdev = usbd_init(&otgfs_usb_driver,
                        &dev_descriptor,
@@ -213,10 +205,24 @@ void usb_cdc_init(ringbuf_t* tx_rb_ptr, ringbuf_t* rx_rb_ptr)
                        ctx.control_request_buffer,
                        sizeof(ctx.control_request_buffer));
 
+}
+
+void usb_cdc_init(ringbuf_t* tx_rb_ptr, ringbuf_t* rx_rb_ptr)
+{
+
+
+    ctx.tx_rb_ptr = tx_rb_ptr;
+    ctx.rx_rb_ptr = rx_rb_ptr;
+    ringbuf_set_write_notify_fn(tx_rb_ptr, usb_cdc_ringbuf_write_notify_cb, &ctx);
+
+    ctx.tx_idle=true;
+    ctx.control_line_DTR=false;
+    ctx.control_line_RTS=false;
+
     usbd_register_set_config_callback(usbdev, usb_set_config);
 }
 
-void usb_cdc_poll() 
+void usb_core_poll() 
 {
     usbd_poll(usbdev);
 }

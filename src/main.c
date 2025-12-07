@@ -134,6 +134,7 @@ int main(void)
 
 
     // Initialise USB-CDC and register callback 
+    usb_core_init();   
     usb_cdc_init(&usb_cdc_tx_rb,&usart_tx_rb);   
 
     // Initialise USART and register callback 
@@ -153,7 +154,7 @@ int main(void)
    int count=0;
 
     while (1) {
-        usb_cdc_poll();
+        usb_core_poll();
 
         if ( count > 500000 )
         {
