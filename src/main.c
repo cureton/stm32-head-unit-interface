@@ -40,6 +40,8 @@ static void clock_setup(void)
     rcc_periph_clock_enable(RCC_GPIOA);
 #endif
 
+    /* PPT SWITCH */
+    rcc_periph_clock_enable(RCC_GPIOA);
 }
 
 
@@ -69,7 +71,11 @@ static void gpio_setup(void)
     gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
     gpio_set(GPIOC, GPIO13); /* LED off (board-dependent) */
 
- 
+    /***************************************
+    *  PTT input PB2- enable GPIO for PTT on blackpill board 
+    ****************************************/
+    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, GPIO0);
+
     /***************************************
     *  USART - Enable USART1 output on alternate function pins 
     ****************************************/
@@ -155,6 +161,14 @@ int main(void)
 
     while (1) {
         usb_core_poll();
+
+	if (gpio_get(GPIOA,GPIO0))
+        {
+            gpio_set(GPIOC,GPIO13);
+        } else {
+            gpio_clear(GPIOC,GPIO13);
+        }
+
 
         if ( count > 500000 )
         {
