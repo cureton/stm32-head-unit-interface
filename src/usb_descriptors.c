@@ -171,9 +171,7 @@ const struct usb_config_descriptor config_descriptor = {
  * Strings
  * -------------------------------------------------------------------------- */
 
-/*  Space to populate STM32 uniw ID into as hex */
-#define SERIAL_BUFFER_LEN = 25  /* Max 126 chars */
-
+/* Extra space in array for it to be populated with STM32 device serial number */
 static char usb_serial[25] = "STM32 Unique ID";
 
 
