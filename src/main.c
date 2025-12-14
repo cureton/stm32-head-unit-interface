@@ -8,6 +8,7 @@
 
 #include <stddef.h> /* for NULL */
 
+#include "usb_core.h"
 #include "usb_cdc.h"
 #include "usart.h"
 

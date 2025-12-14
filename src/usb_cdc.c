@@ -3,18 +3,15 @@
 #include <libopencm3/usb/usbstd.h>
 #include <libopencm3/usb/cdc.h>
 
-#include <libopencm3/stm32/desig.h> // For getting device uniq id -> usb serial
-
 #include "usb_descriptors.h"
+#include "usb_core.h"
 #include "usb_cdc.h"
 #include "ringbuf.h"
 
 
 #include <libopencm3/stm32/gpio.h>
 
-/* Global USB device handle */
-static usbd_device *usbdev;
-
+usbd_device *usbdev; 
 
 typedef struct {
     ringbuf_t* tx_rb_ptr;        // TX ring buffer
@@ -22,7 +19,6 @@ typedef struct {
     bool tx_idle;                   // idle flag
     bool control_line_DTR;          // 
     bool control_line_RTS;          // 
-    uint8_t control_request_buffer[128]; // Buffer for control requests
 } usb_cdc_context;
 
 /* STATIC context for cdc state */
@@ -98,8 +94,6 @@ cdc_control_request_cb(usbd_device *dev,
 
 
 
-/* Simple echo callbacks for each CDC data OUT EP */
-
 static void cdc_data_rx_cb(usbd_device *dev, uint8_t ep)
 {
     (void)ep;
@@ -130,7 +124,6 @@ static void cdc_data_tx_cb(usbd_device *dev, uint8_t ep)
 }
 
 
-/* Called from main.c */
 void usb_set_config(usbd_device *usbd_dev, uint16_t wValue)
 {
     (void)wValue;
@@ -191,25 +184,9 @@ void usb_cdc_ringbuf_write_notify_cb(void  *passed_ctx)
  * USB Setup
  * -------------------------------------------------------------------------- */
 
-
-void usb_core_init()
-{
-    /* Replace placeholder with processor serial number to allow unique udev rules */
-    usb_descriptors_set_unique_serial();
-
-    usbdev = usbd_init(&otgfs_usb_driver,
-                       &dev_descriptor,
-                       &config_descriptor,
-                       usb_strings,
-                       3,
-                       ctx.control_request_buffer,
-                       sizeof(ctx.control_request_buffer));
-
-}
-
 void usb_cdc_init(ringbuf_t* tx_rb_ptr, ringbuf_t* rx_rb_ptr)
 {
-
+    usbdev = usb_core_get_handle();
 
     ctx.tx_rb_ptr = tx_rb_ptr;
     ctx.rx_rb_ptr = rx_rb_ptr;
@@ -220,9 +197,4 @@ void usb_cdc_init(ringbuf_t* tx_rb_ptr, ringbuf_t* rx_rb_ptr)
     ctx.control_line_RTS=false;
 
     usbd_register_set_config_callback(usbdev, usb_set_config);
-}
-
-void usb_core_poll() 
-{
-    usbd_poll(usbdev);
 }
